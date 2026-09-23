@@ -46,6 +46,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           rm -f sntg-app.zip
+          rm -rf project/.github
           cp -r project/. .
           rm -rf project
           git add -A
