@@ -1,0 +1,2061 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNTG</title>
+    <style>
+        :root {
+            --page-bg: #f9f9ff;
+            --search-bg: #ffffff;
+            --search-color: #110817;
+            --search-border: #c75a00;
+            --result-bg: #fffefb;
+            --term-color: navy;
+            --source-color: olive;
+            --text-color: #110817;
+            //            --bullet-color: #993300;
+            --domain-color: #993300;
+            --domain-bg: #fffaf7;
+            --domain-border: #f9d3f0;
+            --main-border: #ccc;
+            --suggestions-bg: #ffffea;
+            --suggestions-hover-bg: #f0f0f0;
+            --suggestions-separator: #ccc;
+            //            --selected-bg: #e0e0e0;
+
+            --links-color: #0018ff;
+            --derivatives-color: #bd663fd3;
+            --derivatives-items-color: #4b7296e7;
+
+            //            --status-color: #888;
+            //            --menu-toggle: #fff;
+            //            --menu-bg: #fff;
+            //            --menu-hover-bg: #f0f0f0;
+            //            --submenu-bg: #fafafa;
+            //            --submenu-hover-bg: #eef2f7;
+            //            --menu-border: #ccc;
+
+            --modal-bg: #f5f7ff;
+            --modal-overlay: rgba(0, 0, 0, 0.35);
+
+            //            --order-button-color: #82502b;
+            //            --order-button-hover-color: #000;
+
+        }
+
+        html.dark-mode {
+            --page-bg: #12161c;
+            --search-bg: #1b2129;
+            --search-color: #e7e9ed;
+            --search-border: #c77a3a;
+            --result-bg: #1b2129;
+            --main-border: #3b4654;
+
+            --term-color: #9fc5ff;
+            //            --source-color: #c9c97a;
+            --text-color: #e7e9ed;
+
+            //            --bullet-color: #993300;
+            --domain-color: #e09045;
+            --domain-bg: #352f00;
+            --domain-border: #5f3300;
+
+            --suggestions-bg: #2c2800;
+            --suggestions-hover-bg: #431e00;
+            --suggestions-separator: #555;
+            //            --selected-bg: #ffd295d0;
+
+            --links-color: #408cff;
+            --derivatives-color: #e6a783;
+            --derivatives-items-color: #8fb8d8;
+
+            //    --status-color: #b6bdc7;
+
+            //    --menu-bg: #1b2129;
+            //    --menu-hover-bg: #28313c;
+
+            --modal-bg: #45453f;
+            --modal-overlay: rgba(0, 0, 0, 0.60);
+
+            //    --order-button-color: #c9946d;
+            //    --order-button-hover-color: #ffffff;
+        }
+
+        html {
+            /*o   اصلاح ریشه‌ای: خاموش‌کردن هایلایت لمسی پیش‌فرض مرورگر برای کل صفحه،
+o     نه فقط یک بخش. این تنها راهی است که در وب‌کیت‌های موبایل (به‌خصوص
+o     اندروید قدیمی) قابل‌اعتماد است. */
+            -webkit-tap-highlight-color: transparent;
+            background-color: var(--page-bg);
+        }
+
+        body {
+            background-color: var(--page-bg);
+            color: var(--text-color);
+        }
+
+        #search-container {
+            display: inline-block;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        #search-input {
+            padding: 10px 35px 10px 10px;
+            width: 245px;
+            font-size: 18px;
+            color: var(--search-color);
+            background-color: var(--search-bg);
+            border: 1px solid var(--search-border);
+        }
+
+        #clear-search {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: none;
+            background: none;
+            color: var(--text-color);
+            font-size: 27px;
+            cursor: pointer;
+            display: none;
+            z-index: 101;
+        }
+
+        #suggestions {
+            position: absolute;
+            border: 1px solid var(--main-border);
+            max-height: 330px;
+            overflow-y: auto;
+            //            width: 300px;
+            background-color: var(--suggestions-bg);
+            z-index: 100;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        #suggestions div {
+            padding: 8px;
+            border-bottom: 1px solid var(--suggestions-separator);
+        }
+
+        #suggestions div:hover {
+            background-color: var(--suggestions-hover-bg);
+        }
+
+        #suggestions div.suggestion-selected,
+        #combinations-list div.suggestion-selected {
+            background-color: var(--domain-bg);
+            color: var(--links-color);
+            font-weight: bold;
+        }
+
+        #history-btn {
+            position: absolute;
+            left: 100%;
+            margin-left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: none;
+            //            border: 1px solid var(--main-border);
+            border-radius: 6px;
+            background: var(--page-bg);
+            //            color: var(--text-color);
+            font-size: 24px;
+            line-height: 1;
+            padding: 4px 6px;
+            cursor: pointer;
+            z-index: 101;
+        }
+
+        #history-btn img {
+            width: 28px;
+            height: 28px;
+            display: block;
+        }
+
+        #history-btn:hover {
+            background: var(--modal-bg);
+            border: 1px solid var(--main-border);
+        }
+
+        #history-list {
+            position: fixed;
+            right: 8px;
+            top: 105px;
+            left: auto;
+            margin-left: 0;
+            transform: none;
+            border: 1px solid var(--main-border);
+            max-height: 280px;
+            overflow-y: auto;
+            min-width: 200px;
+            max-width: 250px;
+            background-color: var(--modal-bg);
+            z-index: 100;
+            cursor: pointer;
+            font-size: 18px;
+            display: none;
+            direction: ltr;
+            text-align: left;
+        }
+
+        #history-list div {
+            padding: 8px;
+            border-bottom: 1px solid var(--suggestions-separator);
+        }
+
+        #history-list div:hover {
+            background-color: var(--suggestions-hover-bg);
+        }
+
+        #history-list div.history-selected {
+            background-color: var(--domain-bg);
+            color: var(--links-color);
+            font-weight: bold;
+        }
+
+        .result-block {
+            border: 1px solid var(--main-border);
+            padding: 15px;
+            direction: rtl;
+            //            color: #110817;
+            background-color: var(--result-bg);
+        }
+
+        .term {
+            color: var(--term-color);
+            font-weight: bold;
+            margin-bottom: 5px;
+            direction: ltr;
+            text-align: left;
+        }
+
+        .source-label {
+            font-size: 13px;
+            //            font-weight: bold;
+            color: var(--source-color);
+            margin-bottom: 5px;
+            text-align: left;
+            direction: ltr;
+        }
+
+        .term-source-container {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 10px;
+        }
+
+        .domainTag {
+            color: var(--domain-color);
+            background: var(--domain-bg);
+            padding: 2px 5px 5px 5px;
+            border: 1px solid var(--domain-border);
+            //            border-radius: 10px;
+        }
+
+        .derivativesTag {
+            color: var(--derivatives-color);
+            font-size: 14px;
+        }
+
+        .derivativesItems {
+            color: var(--derivatives-items-color);
+            font-size: 13px;
+        }
+
+        .bulletItems {
+            color: var(--domain-color);
+            font-size: 13px;
+        }
+
+        #theme-container {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            z-index: 201;
+        }
+
+        #theme-toggle {
+            position: absolute;
+            top: 0;
+            left: 0;
+
+            font-size: 22px;
+            line-height: 1;
+            padding: 6px 12px;
+
+            border: 1px solid var(--main-border);
+            border-radius: 6px;
+
+            background: var(--menu-bg);
+            color: var(--text-color);
+
+            cursor: pointer;
+        }
+
+        #theme-toggle:hover {
+            background: var(--menu-hover-bg);
+        }
+
+        #glossary-status {
+            margin-top: 10px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #888;
+        }
+
+        #menu-container {
+            position: relative;
+            display: block;
+            text-align: right;
+            direction: rtl;
+        }
+
+        #menu-toggle {
+            font-size: 22px;
+            line-height: 1;
+            padding: 6px 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            color: var(--text-color);
+            background: var(--result-bg);
+            cursor: pointer;
+        }
+
+        #menu-toggle:hover {
+            background: var(--domain-bg);
+        }
+
+        .menu-dropdown {
+            position: absolute;
+            top: calc(100% + 4px);
+            right: 0;
+            min-width: 220px;
+            background: #fff;
+            color: #110817;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px var(--modal-overlay);
+            z-index: 200;
+            direction: rtl;
+            text-align: right;
+            font-size: 15px;
+            overflow: hidden;
+            width: 260px;
+    box-sizing: border-box;
+            /*o رفع باگ محوشدنِ پس‌زمینهٔ منو در Android WebView هنگام اسکرول لمسی:
+o           مجبور کردن مرورگر به ساخت یک لایهٔ GPU جدا برای این باکس. */
+            transform: translateZ(0);
+            -webkit-transform: translateZ(0);
+            will-change: transform;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+
+        .menu-item {
+            padding: 10px 14px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .menu-item:hover {
+            background: #f0f0f0;
+        }
+
+        .menu-separator {
+            border-top: 1px solid #ddd;
+        }
+
+        .menu-submenu {
+            border-top: 1px solid #ddd;
+            border-bottom: 1px solid #ddd;
+            background: #fafafa;
+            border-left: 1px solid #ddd;
+            max-height: 270px;
+            overflow-y: auto;
+            direction: ltr;
+            color: #110817;
+            /*o رفع باگ محوشدنِ منو هنگام کشیدن انگشت روی لیست گلوساری‌ها در
+o           Android WebView: هم لایهٔ GPU جدا، هم جلوگیری از سرریزِ اسکرول
+o           به صفحهٔ زیرین. */
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+            transform: translateZ(0);
+            -webkit-transform: translateZ(0);
+        }
+
+        .glossary-checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            cursor: pointer;
+            box-sizing: border-box;
+    overflow: hidden;
+            //            text-align: right;
+        }
+
+        .glossary-checkbox-row:hover {
+            background: #eef2f7;
+        }
+
+        .glossary-checkbox-row input[type="checkbox"] {
+            cursor: pointer;
+        }
+
+        .glossary-checkbox-row label {
+            cursor: pointer;
+            flex: 1;
+            text-align: left;
+            white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+        }
+
+        .glossary-order-btn {
+            cursor: pointer;
+            padding: 2px 6px;
+            font-size: 19px;
+            user-select: none;
+            color: #82502b;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .glossary-order-btn:hover {
+            color: #000;
+        }
+
+        .glossary-order-btn.disabled {
+            opacity: 0.25;
+            pointer-events: none;
+        }
+
+        /* ===== Modal ===== */
+
+        #meaning-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--modal-overlay);
+            align-items: center;
+            justify-content: center;
+        }
+
+        #meaning-modal-box {
+            position: relative;
+            width: 80%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            background: var(--modal-bg);
+            border: 2px solid var(--main-border);
+            border-radius: 6px;
+            padding: 10px;
+            box-sizing: border-box;
+            /* when dragged, JS switches this to absolute + left/top */
+        }
+
+        #meaning-modal-drag-handle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 30px;
+            padding: 0 40px 0 0;
+            cursor: move;
+            //            user-select: none;
+            //            -webkit-user-select: none;
+            touch-action: none;
+            //            background: var(--domain-bg);
+            //            border-bottom: 1px solid var(--main-border);
+            //            border-radius: 6px 6px 0 0;
+            //            color: var(--domain-color);
+            //            font-size: 13px;
+            //            direction: rtl;
+        }
+
+        #meaning-modal-drag-handle:active {
+            cursor: grabbing;
+        }
+
+        #meaning-modal-close {
+            position: absolute;
+            top: 4px;
+            right: 8px;
+            border: none;
+            color: var(--text-color);
+            background: none;
+            font-size: 25px;
+            cursor: pointer;
+            line-height: 1;
+            z-index: 2;
+        }
+
+        #meaning-modal-content {
+            //            padding: 15px;
+            //            margin-top: 0;
+        }
+
+        #meaning-modal-content .result-block {
+            margin-bottom: 0 !important;
+            //            padding-bottom: 0 !important;
+        }
+
+        #back-to-top,
+        #go-to-bottom {
+            position: fixed;
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 50%;
+            background-color: #c75a00;
+            color: white;
+            font-size: 22px;
+            font-weight: bold;
+            cursor: pointer;
+            display: none;
+            z-index: 999;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+            opacity: 0.7;
+            transition: opacity 0.3s, transform 0.2s;
+        }
+
+        #back-to-top {
+            bottom: 8px;
+            left: 10px;
+        }
+
+        #go-to-bottom {
+            bottom: 8px;
+            right: 10px;
+        }
+
+        #back-to-top:active,
+        #go-to-bottom:active {
+            transform: scale(0.92);
+            opacity: 1;
+        }
+
+        hr {
+            border: none;
+            border-top: 1px solid var(--main-border);
+        }
+
+        /*o حالت پاپ‌آپ: وقتی صفحه از داخل منوی انتخاب متن اندروید
+o           (ProcessTextActivity) با پارامتر popup=1 باز می‌شود، رابط اصلی
+o           برنامه (کادر جستجو، منو، تاریخچه) عیناً نمایش داده می‌شود؛
+o           فقط دکمه‌های شناورِ اسکرول که در این پنجرهٔ کوچک‌تر کاربرد
+o           چندانی ندارند، مخفی می‌شوند. */
+        /*o حالت پاپ‌آپ: پنجرهٔ اندروید کاملاً شفاف است (نگاه کنید به
+o           styles.xml)، پس همین‌جا با CSS یک پس‌زمینهٔ نیمه‌تیره (که از
+o           پشتش مرورگر/PDF واقعی دیده می‌شود) به‌علاوهٔ یک کارتِ کوچیکِ
+o           شناور می‌سازیم؛ دقیقاً همان تکنیکِ خودِ #meaning-modal برنامه. */
+        html.popup-mode,
+        html.popup-mode body {
+            background: transparent !important;
+            margin: 0;
+            height: 100%;
+        }
+
+        #popup-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            z-index: 900;
+        }
+
+        #popup-card {
+            position: fixed;
+            top: 6%;
+            bottom: 10%;
+            left: 5%;
+            right: 5%;
+            background: var(--body-bg, #fff);
+            border-radius: 12px;
+            overflow-y: auto;
+            z-index: 901;
+            padding: 8px 12px;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+            box-sizing: border-box;
+        }
+
+        #popup-close-btn {
+            position: fixed;
+            top: calc(6% + 6px);
+            left: calc(5% + 6px);
+            z-index: 999;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 1px solid #ccc;
+            background: #fff;
+            color: #333;
+            font-size: 16px;
+            line-height: 1;
+            cursor: pointer;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+        }
+        html.popup-mode #back-to-top,
+        html.popup-mode #go-to-bottom {
+            display: none !important;
+        }
+
+    </style>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ffffff">
+</head>
+
+<body>
+
+    <div id="theme-container">
+        <button type="button" id="theme-toggle" aria-label="فعال کردن حالت تاریک" title="حالت تاریک">
+            ☾
+        </button>
+    </div>
+    <div id="menu-container">
+        <button type="button" id="menu-toggle" onclick="toggleMainMenu(event)" aria-label="TriColon">⋮</button>
+        <div id="main-menu" class="menu-dropdown" style="display:none;">
+            <div class="menu-item" onclick="toggleGlossarySubmenu(event)">📚 واژه‌نامه‌های موجود</div>
+            <div id="glossary-submenu" class="menu-submenu" style="display:none;"></div>
+            <div class="menu-separator"></div>
+            <div class="menu-item" onclick="openGlossaryPicker()">➕ افزودن واژه‌نامهٔ جدید</div>
+            <div class="menu-separator"></div>
+            <div class="menu-item" onclick="showStorageUsage()">📦 نمایش فضای ذخیره‌سازی</div>
+            <div class="menu-separator"></div>
+            <div class="menu-item" onclick="clearSearchHistory()">🧹 پاک کردن سابقهٔ جستجو</div>
+        </div>
+    </div>
+
+    <input type="file" id="glossaryPicker" multiple style="display:none" onchange="addGlossaries(this.files)">
+
+    <div id="glossary-status" align="right">… در حال بارگذاری واژه‌نامه‌ها</div>
+
+    <!-- <h1>Glossary Search</h1> -->
+    <div id="search-container">
+        <input type="text" id="search-input" placeholder="… واژه‌ای وارد کنید"><button id="clear-search" type="button">×</button>
+        <div id="suggestions"></div>
+        <button type="button" id="history-btn" title="سابقه جستجو" aria-label="سابقه جستجو">
+            <img src="ArrowClock_48_PNG.ico" alt="">
+        </button>
+        <div id="history-list"></div>
+    </div>
+
+    <div id="results-container">
+        <!-- Search results -->
+    </div>
+
+    <div id="meaning-modal">
+        <div id="meaning-modal-box">
+
+            <!-- 
+            <div id="meaning-modal-drag-handle" title="برای جابه‌جایی بکشید">
+                ⋮⋮  Move || جابجایی || Move
+            </div>
+         -->
+            <div id="meaning-modal-drag-handle" title="برای جابه‌جایی بکشید">
+            </div>
+
+            <button type="button" id="meaning-modal-close" aria-label="بستن">
+                ×
+            </button>
+
+            <div id="meaning-modal-content"></div>
+
+        </div>
+    </div>
+
+    <button id="back-to-top" title="بازگشت به بالا">￪</button>
+    <button id="go-to-bottom" title="رفتن به پایین">￬</button>
+
+    <script>
+        const DEFAULT_GLOSSARY_FILES = [];
+        const DEFAULT_GLOSSARY_NAMES = new Set(
+            DEFAULT_GLOSSARY_FILES.map(f => f.replace(/\.json$/i, '').replace(/_/g, " "))
+        );
+
+        const USER_GLOSSARY_DB_NAME = 'TechnicalDictionaryGlossaries';
+        const USER_GLOSSARY_STORE_NAME = 'glossaries';
+        const ACTIVE_STATE_STORAGE_KEY = 'techDictionary_glossaryActiveState';
+        const SEARCH_HISTORY_STORAGE_KEY = 'techDictionary_searchHistory';
+        const MAX_SEARCH_HISTORY = 30;
+
+        let userGlossaryMemory = {};
+        let dictionaries = {};
+        let allKeysCombined = []; // Stores ORIGINAL keys (with real casing) from ACTIVE glossaries only. Used for suggestions list.
+        let loadedGlossaryNames = [];
+        let expandedGlossaryName = null; // نام گلوساری‌ای که الان ردیفش «باز» است
+        let userGlossaryKeyByDisplayName = {}; // displayName -> original IndexedDB key (for delete)
+        let searchHistory = [];
+
+        function loadSearchHistory() {
+            try {
+                const raw = localStorage.getItem(SEARCH_HISTORY_STORAGE_KEY);
+                searchHistory = raw ? JSON.parse(raw) : [];
+                if (!Array.isArray(searchHistory)) searchHistory = [];
+            } catch (error) {
+                console.warn('Could not read search history.', error);
+                searchHistory = [];
+            }
+        }
+
+        function saveSearchHistory() {
+            try {
+                localStorage.setItem(SEARCH_HISTORY_STORAGE_KEY, JSON.stringify(searchHistory));
+            } catch (error) {
+                console.warn('Could not save search history.', error);
+            }
+        }
+
+        function addToSearchHistory(term) {
+            term = (term || '').trim();
+            if (!term) return;
+            searchHistory = searchHistory.filter(t => t !== term);
+            searchHistory.unshift(term);
+            if (searchHistory.length > MAX_SEARCH_HISTORY) {
+                searchHistory.length = MAX_SEARCH_HISTORY;
+            }
+            saveSearchHistory();
+        }
+
+        function toggleHistoryList(event) {
+            if (event) event.stopPropagation();
+            const list = document.getElementById('history-list');
+            const historyBtn = document.getElementById('history-btn');
+            const suggestionsDiv = document.getElementById('suggestions');
+            if (suggestionsDiv) suggestionsDiv.innerHTML = '';
+
+            if (list.style.display === 'block') {
+                list.style.display = 'none';
+                historyBtn.style.border = 'none';
+                historyBtn.style.background = 'var(--page-bg)';
+                return;
+            }
+
+            list.innerHTML = '';
+            if (!searchHistory.length) {
+                const empty = document.createElement('div');
+                empty.textContent = 'هیچ سابقه‌ای ثبت نشده است.';
+                empty.style.cursor = 'default';
+                empty.style.direction = 'rtl';
+                empty.style.textAlign = 'right';
+                list.appendChild(empty);
+            } else {
+                searchHistory.forEach(term => {
+                    const div = document.createElement('div');
+                    div.textContent = term;
+                    div.onclick = () => {
+                        div.classList.add('history-selected');
+                        document.getElementById('search-input').value = term;
+                        requestAnimationFrame(() => {
+                            setTimeout(() => {
+                                list.style.display = 'none';
+                                historyBtn.style.border = 'none';
+                                historyBtn.style.background = 'var(--page-bg)';
+                                showMeaning(term);
+                            }, 111);
+                        });
+                    };
+                    list.appendChild(div);
+                });
+            }
+            list.style.display = 'block';
+            historyBtn.style.border = '1px solid var(--main-border)';
+            historyBtn.style.background = 'var(--modal-bg)';
+        }
+
+        function openMeaningModal(html) {
+
+            const modal =
+                document.getElementById("meaning-modal");
+
+            const content =
+                document.getElementById("meaning-modal-content");
+
+            const box =
+                document.getElementById("meaning-modal-box");
+
+            content.innerHTML = html;
+
+            //o هر بار باز شدن: موقعیت را به حالت مرکز (flex) برگردان
+            box.style.position = "relative";
+            box.style.left = "";
+            box.style.top = "";
+            box.style.margin = "";
+            box.style.width = ""; // برگرداندن به 90% / max-width در CSS
+
+            modal.style.display = "flex";
+        }
+
+        function closeMeaningModal() {
+
+            const modal =
+                document.getElementById("meaning-modal");
+
+            modal.style.display = "none";
+        }
+
+        document
+            .getElementById("meaning-modal-close")
+            .addEventListener("click", closeMeaningModal);
+
+        document
+            .getElementById("meaning-modal")
+            .addEventListener("click", function(event) {
+
+                if (event.target === this) {
+                    closeMeaningModal();
+                }
+
+            });
+
+        document.addEventListener("keydown", function(event) {
+
+            if (event.key === "Escape") {
+                closeMeaningModal();
+            }
+
+        });
+
+        //o ===== جابه‌جایی Modal با کشیدن نوار بالا =====
+        (function setupModalDrag() {
+            const box = document.getElementById("meaning-modal-box");
+            const handle = document.getElementById("meaning-modal-drag-handle");
+            if (!box || !handle) return;
+
+            let isDragging = false;
+            let startX = 0;
+            let startY = 0;
+            let startLeft = 0;
+            let startTop = 0;
+
+            function getPoint(e) {
+                if (e.touches && e.touches.length) {
+                    return {
+                        x: e.touches[0].clientX,
+                        y: e.touches[0].clientY
+                    };
+                }
+                return {
+                    x: e.clientX,
+                    y: e.clientY
+                };
+            }
+
+            function onPointerDown(e) {
+                //o فقط کلیک/لمس روی خود نوار (نه دکمه بستن)
+                if (e.target === document.getElementById("meaning-modal-close")) return;
+
+                const point = getPoint(e);
+                const rect = box.getBoundingClientRect();
+
+                //o تبدیل از حالت flex-مرکز به absolute با مختصات فعلی
+                box.style.position = "absolute";
+                box.style.left = rect.left + "px";
+                box.style.top = rect.top + "px";
+                box.style.margin = "0";
+                //o عرض را حفظ کن تا در absolute جمع نشود
+                box.style.width = rect.width + "px";
+
+                isDragging = true;
+                startX = point.x;
+                startY = point.y;
+                startLeft = rect.left;
+                startTop = rect.top;
+
+                handle.style.cursor = "grabbing";
+                e.preventDefault();
+            }
+
+            function onPointerMove(e) {
+                if (!isDragging) return;
+
+                const point = getPoint(e);
+                let newLeft = startLeft + (point.x - startX);
+                let newTop = startTop + (point.y - startY);
+
+                //o محدود کردن داخل صفحه (با کمی حاشیه)
+                const margin = 8;
+                const maxLeft = window.innerWidth - box.offsetWidth - margin;
+                const maxTop = window.innerHeight - 40; // حداقل نوار بالا دیده شود
+
+                newLeft = Math.max(margin, Math.min(newLeft, maxLeft));
+                newTop = Math.max(margin, Math.min(newTop, maxTop));
+
+                box.style.left = newLeft + "px";
+                box.style.top = newTop + "px";
+
+                e.preventDefault();
+            }
+
+            function onPointerUp() {
+                if (!isDragging) return;
+                isDragging = false;
+                handle.style.cursor = "move";
+            }
+
+            handle.addEventListener("mousedown", onPointerDown);
+            document.addEventListener("mousemove", onPointerMove);
+            document.addEventListener("mouseup", onPointerUp);
+
+            handle.addEventListener("touchstart", onPointerDown, {
+                passive: false
+            });
+            document.addEventListener("touchmove", onPointerMove, {
+                passive: false
+            });
+            document.addEventListener("touchend", onPointerUp);
+            document.addEventListener("touchcancel", onPointerUp);
+        })();
+
+        function loadActiveStateFromStorage() {
+            try {
+                const raw = localStorage.getItem(ACTIVE_STATE_STORAGE_KEY);
+                return raw ? JSON.parse(raw) : {};
+            } catch (error) {
+                console.warn('Could not read saved glossary selection.', error);
+                return {};
+            }
+        }
+
+        function saveActiveStateToStorage() {
+            try {
+                localStorage.setItem(ACTIVE_STATE_STORAGE_KEY, JSON.stringify(glossaryActiveState));
+            } catch (error) {
+                console.warn('Could not save glossary selection.', error);
+            }
+        }
+
+        // Selection (active/inactive) is remembered per browser/device via localStorage.
+        let glossaryActiveState = loadActiveStateFromStorage();
+
+        async function showStorageUsage() {
+            document.getElementById('main-menu').style.display = 'none';
+
+            if (!navigator.storage || !navigator.storage.estimate) {
+                alert('این مرورگر از قابلیت گزارش فضای ذخیره‌سازی (Storage API) پشتیبانی نمی‌کند، بنابراین امکان نمایش عدد دقیق نیست.');
+                return;
+            }
+
+            try {
+                const estimate = await navigator.storage.estimate();
+                const usedMB = (estimate.usage / (1024 * 1024)).toFixed(2);
+                //                const quotaMB = (estimate.quota / (1024 * 1024)).toFixed(2);
+                alert(`فضای اشغال‌شده توسط این صفحه، حدود ${usedMB} مگابایت است.\n\n(این حجم شامل تمام واژه‌نامه‌هایی است که فعلاً بارگذاری شده‌اند.)`);
+            } catch (error) {
+                alert('گزارش‌گیری از فضای ذخیره‌سازی با خطا مواجه شد: ' + error.message);
+            }
+        }
+
+        function openGlossaryPicker() {
+            document.getElementById("glossaryPicker").click();
+            document.getElementById("main-menu").style.display = "none";
+        }
+
+        function toggleMainMenu(event) {
+            if (event) event.stopPropagation();
+            const menu = document.getElementById("main-menu");
+            const isOpen = menu.style.display === "block";
+            menu.style.display = isOpen ? "none" : "block";
+            if (isOpen) {
+                document.getElementById("glossary-submenu").style.display = "none";
+            }
+        }
+
+        function toggleGlossarySubmenu(event) {
+            if (event) event.stopPropagation();
+            const submenu = document.getElementById("glossary-submenu");
+            submenu.style.display = (submenu.style.display === "block") ? "none" : "block";
+        }
+
+        function toggleGlossaryActive(name) {
+            glossaryActiveState[name] = !glossaryActiveState[name];
+            saveActiveStateToStorage();
+            rebuildKeysIndex();
+            updateGlossaryStatus();
+        }
+
+        const GLOSSARY_ORDER_STORAGE_KEY = 'techDictionary_glossaryOrder';
+
+        function loadOrderFromStorage() {
+            try {
+                const raw = localStorage.getItem(GLOSSARY_ORDER_STORAGE_KEY);
+                return raw ? JSON.parse(raw) : [];
+            } catch (error) {
+                console.warn('Could not read saved glossary order.', error);
+                return [];
+            }
+        }
+
+        function saveOrderToStorage() {
+            try {
+                localStorage.setItem(GLOSSARY_ORDER_STORAGE_KEY, JSON.stringify(loadedGlossaryNames));
+            } catch (error) {
+                console.warn('Could not save glossary order.', error);
+            }
+        }
+
+        // Keeps whatever order the user has already arranged; puts any
+        // newly-added glossaries (not seen before) at the end, alphabetically.
+        function applyStoredOrder(names) {
+            const savedOrder = loadOrderFromStorage();
+            const ordered = savedOrder.filter(n => names.includes(n));
+            const newOnes = names.filter(n => !savedOrder.includes(n)).sort();
+            return [...ordered, ...newOnes];
+        }
+
+        function moveGlossary(name, direction) {
+            const index = loadedGlossaryNames.indexOf(name);
+            if (index === -1) return;
+            const newIndex = index + direction;
+            if (newIndex < 0 || newIndex >= loadedGlossaryNames.length) return;
+
+            const submenu = document.getElementById("glossary-submenu");
+
+            //o قبل از جابه‌جایی، موقعیتِ فعلیِ همهٔ ردیف‌ها را ثبت می‌کنیم (FIRST)
+            const firstRects = new Map();
+            submenu.querySelectorAll('.glossary-checkbox-row').forEach(row => {
+                firstRects.set(row.dataset.name, row.getBoundingClientRect());
+            });
+            const scrollBefore = submenu.scrollTop;
+
+            [loadedGlossaryNames[index], loadedGlossaryNames[newIndex]] = [loadedGlossaryNames[newIndex], loadedGlossaryNames[index]];
+
+            saveOrderToStorage();
+            renderGlossarySubmenu();
+
+            //o موقعیت جدید را می‌خوانیم (LAST) و با ترفند FLIP، از موقعیت قبلی
+            //o به‌آرامی به موقعیت جدید حرکت می‌کنیم تا با چشم قابل‌رؤیت باشد
+            submenu.scrollTop = scrollBefore;
+            submenu.querySelectorAll('.glossary-checkbox-row').forEach(row => {
+                const first = firstRects.get(row.dataset.name);
+                if (!first) return;
+                const last = row.getBoundingClientRect();
+                const deltaY = first.top - last.top;
+                if (!deltaY) return;
+
+                row.style.transition = 'none';
+                row.style.willChange = 'transform';
+                row.style.transform = `translateY(${deltaY}px)`;
+                row.getBoundingClientRect(); // اجبار مرورگر به اعمال فوریِ حالت اولیه
+                //o یک requestAnimationFrame به‌تنهایی در برخی نسخه‌های Android
+                //o WebView کافی نیست تا حالت اولیه واقعاً نقاشی شود؛ با دو تا
+                //o تودرتو مطمئن می‌شویم فریم قبلی قطعاً رندر شده است.
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        row.style.transition = 'transform 0.25s ease';
+                        row.style.transform = '';
+                    });
+                });
+                row.addEventListener('transitionend', () => {
+                    row.style.transition = '';
+                    //o will-change فقط برای مدت انیمیشن لازم بود؛ برداشتنش بعد از
+                    //o اتمام کار، از تجمعِ لایه‌های GPU زیاد (که خودش باعث بازگشتِ
+                    //o باگ محوشدنِ پس‌زمینهٔ منو می‌شد) در حالت عادیِ اسکرول جلوگیری می‌کند.
+                    row.style.willChange = '';
+                }, { once: true });
+            });
+        }
+
+        function rebuildKeysIndex() {
+            // Collect ORIGINAL keys (with their real casing) from active glossaries.
+            // Suggestions must show gt / Gt / GT as separate items.
+            allKeysCombined = [];
+            for (const dictName in dictionaries) {
+                if (!glossaryActiveState[dictName]) continue;
+                for (const entryList of dictionaries[dictName].values()) {
+                    for (const entry of entryList) {
+                        if (entry.originalKey) {
+                            allKeysCombined.push(entry.originalKey);
+                        }
+                    }
+                }
+            }
+            // Unique + sorted by lowercase for stable order, but keep original casing
+            const seen = new Set();
+            allKeysCombined = allKeysCombined
+                .filter(k => {
+                    const lower = k.toLowerCase();
+                    if (seen.has(lower + '|' + k)) return false; // exact same string already present
+                    seen.add(lower + '|' + k);
+                    return true;
+                })
+                .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()) || a.localeCompare(b));
+        }
+
+        function renderGlossarySubmenu() {
+    const submenu = document.getElementById("glossary-submenu");
+    submenu.innerHTML = "";
+
+    if (!loadedGlossaryNames.length) {
+        const empty = document.createElement("div");
+        empty.className = "menu-item";
+        empty.textContent = "هیچ واژه‌نامه‌ای بارگذاری نشده است.";
+        submenu.appendChild(empty);
+        return;
+    }
+
+    loadedGlossaryNames.forEach((name, index) => {
+        const row = document.createElement("div");
+        row.className = "glossary-checkbox-row";
+        row.dataset.name = name;
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.id = "glossary-check-" + name.replace(/\s+/g, "_");
+        checkbox.checked = !!glossaryActiveState[name];
+        checkbox.onclick = (event) => {
+            event.stopPropagation();
+            toggleGlossaryActive(name);
+        };
+
+        const label = document.createElement("label");
+        label.setAttribute("for", checkbox.id);
+        label.textContent = name;
+
+        row.appendChild(checkbox);
+        row.appendChild(label);
+
+        const isExpanded = (expandedGlossaryName === name);
+
+        // با کلیک روی خودِ ردیف (یا نام)، همین ردیف را باز/بسته می‌کنیم.
+        row.onclick = (event) => {
+            event.stopPropagation();
+            expandedGlossaryName = isExpanded ? null : name;
+            renderGlossarySubmenu();
+        };
+
+        if (isExpanded) {
+            const upBtn = document.createElement("span");
+            upBtn.textContent = "⬆";
+            upBtn.className = "glossary-order-btn" + (index === 0 ? " disabled" : "");
+            upBtn.title = "انتقال به بالا";
+            upBtn.onclick = (event) => {
+                event.stopPropagation();
+                moveGlossary(name, -1);
+            };
+
+            const downBtn = document.createElement("span");
+            downBtn.textContent = "⬇";
+            downBtn.className = "glossary-order-btn" + (index === loadedGlossaryNames.length - 1 ? " disabled" : "");
+            downBtn.title = "انتقال به پایین";
+            downBtn.onclick = (event) => {
+                event.stopPropagation();
+                moveGlossary(name, 1);
+            };
+
+            row.appendChild(upBtn);
+            row.appendChild(downBtn);
+
+            if (!DEFAULT_GLOSSARY_NAMES.has(name)) {
+                const deleteBtn = document.createElement("span");
+                deleteBtn.textContent = "🗑️";
+                deleteBtn.title = "حذف این واژه‌نامه";
+                deleteBtn.style.cursor = "pointer";
+                deleteBtn.style.marginInlineStart = "4px";
+                deleteBtn.onclick = (event) => {
+                    event.stopPropagation();
+                    deleteUserGlossary(name);
+                };
+                row.appendChild(deleteBtn);
+            }
+        }
+
+        submenu.appendChild(row);
+    });
+}
+
+        document.addEventListener('click', function(event) {
+            const menuContainer = document.getElementById('menu-container');
+            if (menuContainer && !menuContainer.contains(event.target)) {
+                document.getElementById('main-menu').style.display = 'none';
+                document.getElementById('glossary-submenu').style.display = 'none';
+            }
+        });
+
+        function openUserGlossaryDB() {
+            return new Promise((resolve, reject) => {
+                if (!('indexedDB' in window)) {
+                    reject(new Error('IndexedDB is not supported in this browser.'));
+                    return;
+                }
+
+                const request = indexedDB.open(USER_GLOSSARY_DB_NAME, 1);
+
+                request.onupgradeneeded = function(event) {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains(USER_GLOSSARY_STORE_NAME)) {
+                        db.createObjectStore(USER_GLOSSARY_STORE_NAME, {
+                            keyPath: 'name'
+                        });
+                    }
+                };
+
+                request.onsuccess = function(event) {
+                    resolve(event.target.result);
+                };
+
+                request.onerror = function() {
+                    reject(request.error || new Error('Could not open IndexedDB.'));
+                };
+            });
+        }
+
+        async function getStoredUserGlossaries() {
+            try {
+                const db = await openUserGlossaryDB();
+                return await new Promise((resolve, reject) => {
+                    const tx = db.transaction(USER_GLOSSARY_STORE_NAME, 'readonly');
+                    const store = tx.objectStore(USER_GLOSSARY_STORE_NAME);
+                    const request = store.getAll();
+
+                    request.onsuccess = function() {
+                        resolve(request.result || []);
+                    };
+
+                    request.onerror = function() {
+                        reject(request.error || new Error('Could not read user glossaries.'));
+                    };
+
+                    tx.oncomplete = function() {
+                        db.close();
+                    };
+                });
+            } catch (error) {
+                console.warn('IndexedDB unavailable; using memory cache only.', error);
+                return Object.entries(userGlossaryMemory).map(([name, data]) => ({
+                    name,
+                    data
+                }));
+            }
+        }
+
+        async function saveUserGlossary(name, data) {
+            try {
+                const db = await openUserGlossaryDB();
+                await new Promise((resolve, reject) => {
+                    const tx = db.transaction(USER_GLOSSARY_STORE_NAME, 'readwrite');
+                    const store = tx.objectStore(USER_GLOSSARY_STORE_NAME);
+                    const request = store.put({
+                        name,
+                        data
+                    });
+
+                    request.onsuccess = function() {
+                        resolve();
+                    };
+
+                    request.onerror = function() {
+                        reject(request.error || new Error(`Could not save glossary: ${name}`));
+                    };
+
+                    tx.oncomplete = function() {
+                        db.close();
+                    };
+                });
+            } catch (error) {
+                console.warn('IndexedDB save failed; keeping in memory only.', error);
+                userGlossaryMemory[name] = data;
+            }
+        }
+
+        async function deleteUserGlossary(displayName) {
+            const key = userGlossaryKeyByDisplayName[displayName];
+            if (!key) return;
+
+            const confirmed = confirm(`آیا از حذف واژه‌نامهٔ «${displayName}» مطمئن هستید؟ این کار قابل بازگشت نیست.`);
+            if (!confirmed) return;
+
+            try {
+                const db = await openUserGlossaryDB();
+                await new Promise((resolve, reject) => {
+                    const tx = db.transaction(USER_GLOSSARY_STORE_NAME, 'readwrite');
+                    const store = tx.objectStore(USER_GLOSSARY_STORE_NAME);
+                    const request = store.delete(key);
+
+                    request.onsuccess = function() {
+                        resolve();
+                    };
+
+                    request.onerror = function() {
+                        reject(request.error || new Error(`Could not delete glossary: ${key}`));
+                    };
+
+                    tx.oncomplete = function() {
+                        db.close();
+                    };
+                });
+            } catch (error) {
+                console.warn('IndexedDB delete failed; removing from memory cache.', error);
+                delete userGlossaryMemory[key];
+            }
+
+            delete glossaryActiveState[displayName];
+            saveActiveStateToStorage();
+
+            await loadDictionaries();
+
+            alert(`واژه‌نامهٔ «${displayName}» حذف شد.`);
+        }
+
+        function readFileAsText(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    resolve(e.target.result);
+                };
+                reader.onerror = function() {
+                    reject(reader.error || new Error(`Could not read file: ${file.name}`));
+                };
+                reader.readAsText(file, 'UTF-8');
+            });
+        }
+
+        function updateGlossaryStatus() {
+            const status = document.getElementById('glossary-status');
+            const total = loadedGlossaryNames.length;
+            const activeCount = loadedGlossaryNames.filter(name => glossaryActiveState[name]).length;
+
+            if (!total) {
+                status.textContent = 'هیچ واژه‌نامه‌ای بارگذاری نشده است.';
+                return;
+            }
+
+            //            status.textContent = `اکنون ${activeCount} عدد از ${total} واژه‌نامه فعال است.`;
+            status.textContent = "";
+        }
+
+        async function addGlossaries(files) {
+            const selectedFiles = Array.from(files || []);
+            if (!selectedFiles.length) return;
+
+            let added = 0;
+            let failed = 0;
+            let skipped = 0;
+            const skippedNames = [];
+            const addedNames = [];
+            const errors = [];
+
+            for (const file of selectedFiles) {
+                try {
+                    const displayName = file.name.replace(/\.json$/i, '').replace(/_/g, " ");
+                    if (loadedGlossaryNames.includes(displayName)) {
+                        skipped++;
+                        skippedNames.push(displayName);
+                        continue;
+                    }
+
+                    const text = await readFileAsText(file);
+                    const data = JSON.parse(text);
+
+                    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+                        throw new Error('فرمت JSON این فایل مناسب نیست.');
+                    }
+
+                    await saveUserGlossary(file.name, data);
+                    added++;
+                    addedNames.push(displayName);
+                } catch (error) {
+                    failed++;
+                    errors.push(`${file.name}: ${error.message}`);
+                    console.error('Error adding glossary:', file.name, error);
+                }
+            }
+
+            document.getElementById('glossaryPicker').value = '';
+
+            await loadDictionaries();
+
+            let message = addedNames.length                ? `\nواژه‌نامهٔ «${addedNames.join('»، «')}» اضافه شد.`                : 'هیچ واژه‌نامه‌ای اضافه نشد.';
+            if (failed) {
+                message += ` ${failed} فایل هم با خطا روبه‌رو شد.`;
+            }
+            if (skipped) {
+                message += `\n واژه‌نامهٔ ${skippedNames.join('، ')} قبلاً اضافه شده بود.`;
+            }
+            alert(message);
+        }
+
+        async function loadDictionaries() {
+            try {
+                const results = [];
+
+                const defaultResults = await Promise.allSettled(
+                    DEFAULT_GLOSSARY_FILES.map(async (fileName) => {
+                        const response = await fetch(fileName);
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status} for ${fileName}`);
+                        }
+                        const data = await response.json();
+                        return {
+                            path: fileName,
+                            data
+                        };
+                    })
+                );
+
+                defaultResults.forEach(result => {
+                    if (result.status === 'fulfilled' && result.value) {
+                        results.push(result.value);
+                    } else if (result.status === 'rejected') {
+                        console.warn('Default glossary load failed:', result.reason);
+                    }
+                });
+
+                const userResults = await getStoredUserGlossaries();
+                const newUserKeyMap = {};
+                userResults.forEach(item => {
+                    if (item && item.name && item.data) {
+                        results.push({
+                            path: item.name,
+                            data: item.data
+                        });
+                        const displayName = item.name.replace(/\.json$/i, '').replace(/_/g, " ");
+                        newUserKeyMap[displayName] = item.name;
+                    }
+                });
+                userGlossaryKeyByDisplayName = newUserKeyMap;
+
+                dictionaries = {};
+                loadedGlossaryNames = [];
+
+                results.forEach(({
+                    path,
+                    data
+                }) => {
+                    const dictName = path.replace(/\.json$/i, '').replace(/_/g, " ");
+                    dictionaries[dictName] = new Map();
+                    loadedGlossaryNames.push(dictName);
+
+                    for (const key in data) {
+                        const entry = data[key];
+                        const lowerKey = key.toLowerCase();
+
+                        let definition = entry[0];
+                        let variants = [];
+
+                        if (entry.length > 1 && Array.isArray(entry[1])) {
+                            variants = entry[1].map(v => String(v).toLowerCase());
+                        }
+
+                        //o چند مدخل با نویسه‌های متفاوت (gt / Gt / GT) ممکن است به یک
+                        //o کلید کوچک‌شدهٔ یکسان برسند؛ هرکدام را در یک فهرست جداگانه
+                        //o نگه می‌داریم تا هیچ‌کدام دیگری را پاک نکند.
+
+                        if (!dictionaries[dictName].has(lowerKey)) {
+                            dictionaries[dictName].set(lowerKey, []);
+                        }
+
+                        dictionaries[dictName].get(lowerKey).push({
+                            definition: definition,
+                            variants: variants,
+                            source: dictName,
+                            originalKey: key
+                        });
+                    }
+                });
+
+                loadedGlossaryNames = applyStoredOrder([...new Set(loadedGlossaryNames)]);
+                saveOrderToStorage();
+
+                // Preserve existing active/inactive choices; default new glossaries to active.
+                const newActiveState = {};
+                loadedGlossaryNames.forEach(name => {
+                    newActiveState[name] = Object.prototype.hasOwnProperty.call(glossaryActiveState, name) ?
+                        glossaryActiveState[name] :
+                        true;
+                });
+                glossaryActiveState = newActiveState;
+
+                rebuildKeysIndex();
+                renderGlossarySubmenu();
+                updateGlossaryStatus();
+            } catch (error) {
+                console.error("Error loading dictionaries:", error);
+                document.getElementById("results-container").innerHTML =
+                    `<div class="result-block"><span class="notFound">Error loading data: ${error.message}</span></div>`;
+                document.getElementById('glossary-status').textContent = 'خطا در بارگذاری واژه‌نامه‌ها';
+            }
+        }
+
+        function updateSuggestions(query) {
+            const suggestionsDiv = document.getElementById("suggestions");
+            suggestionsDiv.innerHTML = '';
+            const historyList = document.getElementById("history-list");
+            if (historyList) historyList.style.display = 'none';
+            const lowerQuery = query.toLowerCase().trim();
+
+            if (!lowerQuery) {
+                return;
+            }
+
+            // Filter by startsWith on lowercase version, but display the ORIGINAL casing.
+            // Variants are NEVER shown in the suggestions list – only real keys.
+            const matchingKeys = allKeysCombined.filter(key =>
+                key.toLowerCase().startsWith(lowerQuery)
+            );
+
+            matchingKeys.slice(0, 12).forEach(key => {
+                const div = document.createElement('div');
+                div.textContent = key; // shows gt / Gt / GT exactly as in JSON
+                div.onclick = () => {
+                    //o اول فقط همین یک سطر را علامت‌گذاری می‌کنیم تا رنگش عوض شود...
+                    div.classList.add('suggestion-selected');
+                    document.getElementById("search-input").value = key;
+
+                    //o ...و به مرورگر یک لحظه فرصت می‌دهیم تا واقعاً همین رنگ را نقاشی کند،
+                    //o قبل از اینکه کل لیست را پاک کنیم. بدون این تأخیر، در برخی
+                    //o مرورگرها/وب‌ویوها، عنصر همان لحظه از صفحه حذف می‌شود و فرصت
+                    //o نقاشی‌شدن رنگ اصلاً پیش نمی‌آید (به همین دلیل رفتار قبلی نامنظم بود).
+                    requestAnimationFrame(() => {
+                        setTimeout(() => {
+                            suggestionsDiv.innerHTML = '';
+                            showMeaning(key);
+                        }, 111);
+                    });
+                };
+                suggestionsDiv.appendChild(div);
+            });
+        }
+
+        function showMeaning(term) {
+            const lowerTerm = term.toLowerCase();
+            const resultsContainer = document.getElementById("results-container");
+            resultsContainer.innerHTML = '';
+
+            let foundAny = false;
+
+            for (const dictName of loadedGlossaryNames) {
+                if (!dictionaries[dictName] || !glossaryActiveState[dictName]) continue;
+
+                const matches = [];
+
+                if (dictionaries[dictName].has(lowerTerm)) {
+                    dictionaries[dictName].get(lowerTerm).forEach(entry => {
+                        matches.push({
+                            entry: entry,
+                            originalKey: entry.originalKey,
+                            matchedViaVariant: false
+                        });
+                    });
+                }
+
+                for (const [key, entryList] of dictionaries[dictName]) {
+                    entryList.forEach(entry => {
+                        if (entry.variants && entry.variants.includes(lowerTerm)) {
+                            matches.push({
+                                entry: entry,
+                                originalKey: entry.originalKey,
+                                matchedViaVariant: true
+                            });
+                        }
+                    });
+                }
+
+                //o همهٔ معانیِ یک گلوساری در یک بلوک؛ فاصله و خط جدا فقط بین گلوساری‌ها
+                if (matches.length > 0) {
+                    foundAny = true;
+
+                    const resultBlock = document.createElement('div');
+                    resultBlock.className = 'result-block';
+
+                    //DeepSeek ———> اضافه کردن فاصله بین نتایج =====
+                    //o (این فاصله/خط بین بلوک‌های گلوساری‌های مختلف است، نه داخل یک گلوساری)
+                    resultBlock.style.marginBottom = "20px";
+                    resultBlock.style.borderBottom = "2px solid var(--main-border)";
+                    resultBlock.style.paddingBottom = "5px";
+                    //DeepSeek ———> پایان اضافه‌ها =====
+
+                    let html = '';
+                    //o نام گلوساری فقط یک‌بار در بالای بلوک
+                    const sourceLabelSpan = `<span class="source-label">(${matches[0].entry.source})</span>`;
+                    html += `<div class="source-label">${sourceLabelSpan} </div>`;
+
+                    matches.forEach((match, index) => {
+                        const foundEntry = match.entry;
+                        const originalKey = match.originalKey;
+
+                        if (index > 0) {
+                            //o میلهٔ افقی ضخیم، حدود ۷۰٪ عرض، وسط‌چین — بین معانیِ همان گلوساری
+                            html += `<div style="margin:16px auto; border-top:4px solid var(--main-border);"><br></div>`;
+                        }
+
+                        if (match.matchedViaVariant) {
+                            html += `<div class="term"> 👉 ${originalKey}</div><p>${foundEntry.definition}`;
+                            //                            if (foundEntry.variants && foundEntry.variants.length > 0) {
+                            //                                html += `<p><strong>دیگرسان‌های "${originalKey}":</strong> عبارتند از: ${foundEntry.variants.map(v =>
+                            //                                    `<a href="#" onclick="showMeaning('${v}'); return false;">${v}</a>`
+                            //                                ).join(', ')}</p>`;
+                            //                            }
+                            const termDisplay = originalKey;
+                            //                            html += `
+                            //                            <div class="term-source-container">
+                            //                                <strong class="term">${termDisplay}</strong>
+                            //                                ${sourceLabelSpan}
+                            //                            </div>
+                            //                            `;
+                            html += `<small><small><small><HR>عبارت مورد جستجو <strong>${term}</strong> است که به <strong>${originalKey}</strong> اشاره دارد.</small></small></small>`;
+                        } else {
+                            //                            alert(term);
+                            const termDisplay = originalKey;
+                            html += `<div class="term">${termDisplay}</div>`;
+                            html += `<p>${foundEntry.definition}</p>`;
+                            //                            if (foundEntry.variants && foundEntry.variants.length > 0) {
+                            //                                html += `<p><strong>دیگرسان‌ها:</strong> ${foundEntry.variants.map(v =>
+                            //                                    `<a href="#" onclick="showMeaning('${v}'); return false;">${v}</a>`
+                            //                                ).join(', ')}</p>`;
+                            //                            }
+                        }
+                    });
+
+                    resultBlock.innerHTML = renderMeaning(html);
+                    resultsContainer.appendChild(resultBlock);
+                }
+            }
+
+            if (!foundAny) {
+                const resultBlock = document.createElement('div');
+                resultBlock.className = 'result-block';
+                resultBlock.innerHTML = `<span class="notFound">عبارت "${term}" یافت نشد.</span>`;
+                resultsContainer.appendChild(resultBlock);
+            }
+            if (foundAny) {
+                addToSearchHistory(term);
+
+                const count = combinationsList(term, true);
+
+                if (count > 0) {
+
+                    const btn = document.createElement("button");
+                    btn.textContent = `▼ ترکیب‌ها (${count})`;
+                    btn.onclick = () => combinationsList(term);
+
+                    resultsContainer.appendChild(btn);
+                }
+            }
+        }
+
+        function combinationsList(term, countOnly = false) {
+
+            term = term.toLowerCase().trim();
+
+            const results = [];
+
+            const re = new RegExp(
+                "(^|[^A-Za-z0-9])" +
+                term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") +
+                "([^A-Za-z0-9]|$)",
+                "i"
+            );
+
+            for (const key of allKeysCombined) {
+
+                if (re.test(key) && key.toLowerCase() !== term) {
+                    results.push(key);
+                }
+
+            }
+
+            if (countOnly) {
+                return results.length;
+            }
+
+            const oldList = document.getElementById("combinations-list");
+
+            if (oldList) {
+                oldList.remove();
+                return;
+            }
+            const resultsContainer = document.getElementById("results-container");
+
+            const list = document.createElement("div");
+            list.id = "combinations-list";
+            list.style.marginTop = "15px";
+
+            const title = document.createElement("div");
+            title.innerHTML = "<hr><b>عبارت‌های حاوی «" + term + "»</b><br><br>";
+
+            list.appendChild(title);
+
+            results.forEach(key => {
+
+                const item = document.createElement("div");
+
+                item.textContent = "⁃ " + key;
+
+                item.style.cursor = "pointer";
+                item.style.padding = "3px 0";
+
+                item.onclick = () => {
+
+                    //o همه آیتم‌های قبلی را از حالت انتخاب خارج کن
+                    document.querySelectorAll("#combinations-list div").forEach(el => {
+                        el.classList.remove("suggestion-selected");
+                    });
+
+                    //o همین آیتم را انتخاب‌شده کن
+                    item.classList.add("suggestion-selected");
+
+                    //o یک لحظه فرصت بده تا رنگ واقعاً دیده شود
+                    requestAnimationFrame(() => {
+
+                        setTimeout(() => {
+
+                            const resultsContainer =
+                                document.getElementById("results-container");
+
+                            const searchInput =
+                                document.getElementById("search-input");
+
+                            //o ذخیرهٔ مقدار فعلی کادر جستجو
+                            const originalSearchValue =
+                                searchInput.value;
+
+                            //o انتقال موقت عناصر واقعی صفحهٔ اصلی به Fragment
+                            const originalFragment =
+                                document.createDocumentFragment();
+
+                            while (resultsContainer.firstChild) {
+                                originalFragment.appendChild(
+                                    resultsContainer.firstChild
+                                );
+                            }
+
+                            //o همان تابع اصلی و سالم برنامه
+                            showMeaning(key);
+
+                            //o نتیجهٔ کامل و قالب‌بندی‌شدهٔ ترکیب
+                            const modalHTML =
+                                resultsContainer.innerHTML;
+
+                            //o حذف نتیجهٔ موقت
+                            resultsContainer.innerHTML = "";
+
+                            //o بازگرداندن همان عناصر واقعی صفحهٔ اصلی
+                            resultsContainer.appendChild(
+                                originalFragment
+                            );
+
+                            //o بازگرداندن مقدار اصلی کادر جستجو
+                            searchInput.value =
+                                originalSearchValue;
+
+                            //o نمایش نتیجهٔ ترکیب در Modal
+                            openMeaningModal(modalHTML);
+
+                        }, 111);
+
+                    });
+                };
+
+                list.appendChild(item);
+
+            });
+
+            resultsContainer.appendChild(list);
+
+            list.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+
+        }
+
+        document.getElementById("search-input").addEventListener("input", function() {
+            updateSuggestions(this.value);
+        });
+
+        document.getElementById("search-input").addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                const query = this.value.trim();
+                document.getElementById("suggestions").innerHTML = '';
+                this.blur();
+                if (query) {
+                    showMeaning(query);
+                } else {
+                    document.getElementById("results-container").innerHTML = "";
+                }
+            }
+        });
+
+        document.addEventListener('click', function(event) {
+            const suggestionsDiv = document.getElementById("suggestions");
+            const historyList = document.getElementById("history-list");
+            const historyBtn = document.getElementById("history-btn");
+            const clickedInsideSearch = document.getElementById('search-input').contains(event.target);
+            const clickedInsideSuggestions = suggestionsDiv.contains(event.target);
+            const clickedInsideHistory = historyList.contains(event.target) || (historyBtn && historyBtn.contains(event.target));
+            if (!clickedInsideSearch && !clickedInsideSuggestions && suggestionsDiv.innerHTML !== '') {
+                suggestionsDiv.innerHTML = '';
+            }
+            if (!clickedInsideHistory && historyList.style.display === 'block') {
+                historyList.style.display = 'none';
+                historyBtn.style.border = 'none';
+                historyBtn.style.background = 'var(--page-bg)';
+            }
+        });
+
+        function renderMeaning(rawText) {
+            if (!rawText) return "";
+            let t = String(rawText);
+
+
+            t = t.replace(/\n/g, "<p>");
+
+            t = t.replace(/<p>([\s\S]*?)(?=<p>|$)/g, function(match, content) {
+                const start = content.replace(/^[\s\u00A0]*/, '');
+
+                const startsWithDigit = /^[\d٠-٩۰-۹]/.test(start);
+                const startsWithLetter = !startsWithDigit && /^[\u0600-\u06FFa-zA-Z]/.test(start);
+
+                if (startsWithLetter) {
+                    return `<p style="text-indent:0;">${content}`;
+                } else {
+                    return `<p style="text-indent:-10px;">${content}`;
+                }
+            });
+
+            t = t.replace(
+                /<p([^>]*)>([\s\S]*?)(?=<p|$)/g,
+                function(match, attrs, content) {
+
+                    //o اولین حرف واقعی (فارسی یا انگلیسی) را پیدا کن
+                    const m = content.match(/[A-Za-z\u0622-\u06CC]/);
+
+                    if (!m) {
+                        return match;
+                    }
+
+                    if (/[A-Za-z]/.test(m[0])) {
+                        return `<p${attrs} dir="ltr" style="text-align:left;">${content}`;
+                    }
+
+                    return match;
+                }
+            );
+            t = t.replace(/•/g, '<span class="bulletItems">●</span>');
+            t = t.replace(/(⦗[^⦘]+⦘)/g, '<span class="domainTag">$1</span>');
+            t = t.replace(/⦅([^⦆]*?)⦆/g, '<span class="derivativesTag">$1</span>');
+            t = t.replace(/⟨([^⟩]*?)⟩/g, '<span class="derivativesItems">$1</span>'); // U+27e8 = ⟨  and U+27e9 = ⟩
+            t = t.replace(/〈([^⟩]*?)〉/g, '<span class="derivativesItems">$1</span>'); // U+2329 = 〈  and  U+232a = 〉
+
+            return t;
+        }
+
+        const clearBtn = document.getElementById("clear-search");
+        const searchInput = document.getElementById("search-input");
+
+        searchInput.addEventListener("input", function() {
+            clearBtn.style.display = this.value ? "block" : "none";
+        });
+
+        clearBtn.addEventListener("click", function() {
+            searchInput.value = "";
+            document.getElementById("suggestions").innerHTML = "";
+            //            document.getElementById("results-container").innerHTML = "";
+            clearBtn.style.display = "none";
+            searchInput.focus();
+        });
+
+        document.getElementById("history-btn").addEventListener("click", toggleHistoryList);
+
+        const backToTopBtn = document.getElementById("back-to-top");
+        const goToBottomBtn = document.getElementById("go-to-bottom");
+
+        function updateScrollButtons() {
+            const scrollTop = window.scrollY || document.documentElement.scrollTop;
+            const windowHeight = window.innerHeight;
+            const documentHeight = document.documentElement.scrollHeight;
+
+            //o آیا صفحه قابل اسکرول است؟ (بیش از یک صفحه)
+            const isScrollable = documentHeight > windowHeight + 50;
+
+            //o دکمه بالا: وقتی کمی پایین آمده باشیم ظاهر شود
+            if (isScrollable && scrollTop > 300) {
+                backToTopBtn.style.display = "block";
+            } else {
+                backToTopBtn.style.display = "none";
+            }
+
+            //o دکمه پایین: وقتی به انتهای صفحه نزدیک نشده باشیم ظاهر شود
+            if (isScrollable && (scrollTop + windowHeight < documentHeight - 100)) {
+                goToBottomBtn.style.display = "block";
+            } else {
+                goToBottomBtn.style.display = "none";
+            }
+        }
+
+        window.addEventListener("scroll", updateScrollButtons);
+        window.addEventListener("resize", updateScrollButtons);
+
+        //o اجرای اولیه
+        updateScrollButtons();
+
+        //o کلیک روی دکمه بالا
+        backToTopBtn.addEventListener("click", function() {
+            window.scrollTo({
+                top: 0,
+                behavior: "smooth"
+            });
+        });
+
+        //o کلیک روی دکمه پایین
+        goToBottomBtn.addEventListener("click", function() {
+            window.scrollTo({
+                top: document.documentElement.scrollHeight,
+                behavior: "smooth"
+            });
+        });
+
+        const THEME_STORAGE_KEY = 'techDictionary_theme';
+        const themeToggle = document.getElementById('theme-toggle');
+
+        function applyTheme(theme) {
+            const isDark = theme === 'dark';
+
+            document.documentElement.classList.toggle('dark-mode', isDark);
+
+            themeToggle.textContent = isDark ? '☀' : '☾';
+
+            themeToggle.setAttribute(
+                'aria-label',
+                isDark ? 'فعال کردن حالت روشن' : 'فعال کردن حالت تاریک'
+            );
+
+            themeToggle.title = isDark ? 'حالت روشن' : 'حالت تاریک';
+        }
+
+        function loadTheme() {
+            let savedTheme = null;
+
+            try {
+                savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+            } catch (error) {
+                console.warn('Could not read saved theme.', error);
+            }
+
+            applyTheme(savedTheme === 'dark' ? 'dark' : 'light');
+        }
+
+        themeToggle.addEventListener('click', function() {
+            const isDark =
+                document.documentElement.classList.contains('dark-mode');
+
+            const newTheme = isDark ? 'light' : 'dark';
+
+            applyTheme(newTheme);
+
+            try {
+                localStorage.setItem(THEME_STORAGE_KEY, newTheme);
+            } catch (error) {
+                console.warn('Could not save selected theme.', error);
+            }
+        });
+
+        loadTheme();
+
+        loadSearchHistory();
+
+        function clearSearchHistory() {
+            document.getElementById('main-menu').style.display = 'none';
+
+            if (!searchHistory.length) {
+                alert('سابقهٔ جستجو خالی است.');
+                return;
+            }
+
+            if (confirm('آیا از پاک کردن تمام سابقهٔ جستجو مطمئن هستید؟')) {
+                searchHistory = [];
+                saveSearchHistory();
+
+                const list = document.getElementById('history-list');
+                if (list) list.style.display = 'none';
+
+                alert('سابقهٔ جستجو پاک شد.');
+            }
+        }
+
+        //o وعده‌ای که وقتی بارگذاری واژه‌نامه‌ها تمام شد، برآورده می‌شود؛
+        //o حالت پاپ‌آپ در پایین همین فایل از آن استفاده می‌کند.
+        let dictionariesReadyPromise = null;
+        window.addEventListener("load", () => {
+            dictionariesReadyPromise = loadDictionaries();
+        });
+
+        //o حالت پاپ‌آپ: وقتی این صفحه از داخل منوی انتخاب متن اندروید
+        //o (ProcessTextActivity، برای PROCESS_TEXT) با آدرس
+        //o ?popup=1&word=... باز می‌شود، به‌محض تمام‌شدن بارگذاریِ
+        //o واژه‌نامه‌ها، مستقیماً معنای همان کلمه نشان داده می‌شود.
+        (function initPopupMode() {
+            const params = new URLSearchParams(location.search);
+            if (params.get('popup') !== '1') return;
+
+            document.documentElement.classList.add('popup-mode');
+
+            function closePopup() {
+                if (window.AndroidPopup && window.AndroidPopup.close) {
+                    window.AndroidPopup.close();
+                } else {
+                    history.back();
+                }
+            }
+
+            //o همهٔ محتوای فعلیِ body (کادر جستجو، منو، نتایج و ...) را داخل
+            //o یک کارتِ کوچیکِ شناور می‌گذاریم، و پشتش یک پس‌زمینهٔ نیمه‌تیره
+            //o می‌سازیم که با کلیک روی خودش (نه محتوای کارت) بسته می‌شود —
+            //o دقیقاً همان تکنیکِ خودِ #meaning-modal برنامه.
+            const backdrop = document.createElement('div');
+            backdrop.id = 'popup-backdrop';
+            backdrop.addEventListener('click', closePopup);
+
+            const card = document.createElement('div');
+            card.id = 'popup-card';
+            while (document.body.firstChild) {
+                card.appendChild(document.body.firstChild);
+            }
+
+            document.body.appendChild(backdrop);
+            document.body.appendChild(card);
+
+            const closeBtn = document.createElement('button');
+            closeBtn.id = 'popup-close-btn';
+            closeBtn.type = 'button';
+            closeBtn.textContent = '✕';
+            closeBtn.setAttribute('aria-label', 'بستن');
+            closeBtn.addEventListener('click', closePopup);
+            document.body.appendChild(closeBtn);
+
+            const word = params.get('word') || '';
+
+            window.addEventListener('load', async () => {
+                await dictionariesReadyPromise;
+                if (word) showMeaning(word);
+            });
+        })();
+        if ("serviceWorker" in navigator) {
+            window.addEventListener("load", () => {
+                navigator.serviceWorker.register("./service-worker.js")
+                    .then(() => console.log("Service Worker registered"))
+                    .catch(error => console.error("Service Worker registration failed:", error));
+            });
+        }
+    </script>
+
+    <p>‌ ‌
+    <p>
+        <button id="back-to-top" title="بازگشت به بالا">￪</button>
+
+</body>
+
+</html>
