@@ -9,14 +9,11 @@ import com.getcapacitor.BridgeActivity;
 
 public class ProcessTextActivity extends BridgeActivity {
 
+    private boolean pageLoaded = false;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        // متنی که کاربر در برنامهٔ دیگر (مرورگر، PDF، دفترچه یادداشت و ...) انتخاب کرده
-        CharSequence selected = getIntent().getCharSequenceExtra(Intent.EXTRA_PROCESS_TEXT);
-        String selectedText = (selected != null) ? selected.toString() : "";
-        String encodedWord = Uri.encode(selectedText);
 
         // یک پل کوچک JS↔Java تا دکمهٔ «بستن» داخل صفحهٔ وب بتواند
         // همین Activity را ببندد (چون این یک پنجرهٔ معمولی است، نه تب مرورگر).
@@ -27,13 +24,50 @@ public class ProcessTextActivity extends BridgeActivity {
             }
         }, "AndroidPopup");
 
-        // از همان bridge/WebView داخلیِ Capacitor استفاده می‌کنیم (نه یک WebView دستی)،
-        // چون این‌طوری دقیقاً همان origin (https://localhost) برنامهٔ اصلی حفظ می‌شود
-        // و در نتیجه به همان IndexedDB (گلوساری‌های ذخیره‌شده) دسترسی داریم.
+        // فقط همین یک‌بار (اولین ساخته‌شدنِ Activity) کل صفحه را بارگذاری
+        // می‌کنیم. کلمهٔ اول از طریق پارامتر URL منتقل می‌شود چون در این
+        // لحظه هنوز جاوااسکریپت صفحه آماده نیست تا evaluateJavascript کار کند.
+        // دفعات بعدی، چون این Activity به‌صورت singleTask تعریف شده،
+        // onNewIntent صدا زده می‌شود (نه onCreate) و از همان تابعِ JS استفاده می‌شود.
+        CharSequence selected = getIntent().getCharSequenceExtra(Intent.EXTRA_PROCESS_TEXT);
+        String selectedText = (selected != null) ? selected.toString() : "";
+        String encodedWord = Uri.encode(selectedText);
         getBridge().getWebView().loadUrl("https://localhost/index.html?popup=1&word=" + encodedWord);
+        pageLoaded = true;
+    }
 
-        // نکته: اندازهٔ پنجره را دیگر دستی (بعد از ساخته‌شدن WebView) تغییر
-        // نمی‌دهیم، چون همین کار باعث بهم‌ریختن layout و کندی می‌شد.
-        // اندازه‌گیری اکنون فقط از طریق تمِ اختصاصی (styles.xml) انجام می‌شود.
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+
+        if (!pageLoaded) {
+            // احتیاطاً: اگر به هر دلیلی هنوز صفحه بارگذاری نشده، صبر می‌کنیم
+            // که onCreate خودش کار را انجام دهد.
+            return;
+        }
+
+        // نمونهٔ قبلی هنوز زنده و بارگذاری‌شده است؛ فقط کلمهٔ جدید را
+        // جستجو می‌کنیم (کسری از ثانیه)، بدون بارگذاری دوبارهٔ کل صفحه.
+        searchWordFromIntent(intent);
+    }
+
+    private void searchWordFromIntent(Intent intent) {
+        CharSequence selected = (intent != null) ? intent.getCharSequenceExtra(Intent.EXTRA_PROCESS_TEXT) : null;
+        String selectedText = (selected != null) ? selected.toString() : "";
+        if (selectedText.isEmpty()) return;
+
+        // متن را به‌شکل امن به‌عنوان یک رشتهٔ جاوااسکریپتی escape می‌کنیم
+        // (نه فقط URL-encode، چون این‌بار مستقیم به‌عنوان کد JS اجرا می‌شود).
+        String escaped = selectedText
+                .replace("\\", "\\\\")
+                .replace("'", "\\'")
+                .replace("\n", "\\n")
+                .replace("\r", "");
+
+        getBridge().getWebView().evaluateJavascript(
+                "window.popupSearchWord && window.popupSearchWord('" + escaped + "');",
+                null
+        );
     }
 }
