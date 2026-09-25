@@ -2076,6 +2076,18 @@ o           شناور می‌سازیم؛ دقیقاً همان تکنیکِ خ
 
             const word = params.get('word') || '';
 
+            //o وقتی این پنجره (چون singleTask است) برای یک کلمهٔ جدید دوباره
+            //o احضار می‌شود، اندروید کل صفحه را از نو بارگذاری نمی‌کند؛ فقط
+            //o همین تابع را صدا می‌زند تا فقط جستجوی جدید انجام شود، بدون
+            //o بارگذاری دوبارهٔ واژه‌نامه‌ها.
+            window.popupSearchWord = function(newWord) {
+                if (!newWord) return;
+                Promise.resolve(dictionariesReadyPromise).then(() => {
+                    showMeaning(newWord);
+                    if (card) card.scrollTop = 0;
+                });
+            };
+
             window.addEventListener('load', async () => {
                 await dictionariesReadyPromise;
                 if (word) showMeaning(word);
