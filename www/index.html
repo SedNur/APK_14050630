@@ -1070,27 +1070,36 @@ o           شناور می‌سازیم؛ دقیقاً همان تکنیکِ خ
         function rebuildKeysIndex() {
             // Collect ORIGINAL keys (with their real casing) from active glossaries.
             // Suggestions must show gt / Gt / GT as separate items.
-            allKeysCombined = [];
+            const seen = new Set();
+            //o هر آیتم را همراه با نسخهٔ lowercase‌اش نگه می‌داریم تا موقع
+            //o مرتب‌سازی، دیگر لازم نباشد toLowerCase را بارها صدا بزنیم.
+            const decorated = [];
             for (const dictName in dictionaries) {
                 if (!glossaryActiveState[dictName]) continue;
                 for (const entryList of dictionaries[dictName].values()) {
                     for (const entry of entryList) {
                         if (entry.originalKey) {
-                            allKeysCombined.push(entry.originalKey);
+                            const k = entry.originalKey;
+                            const lower = k.toLowerCase();
+                            const dedupeKey = lower + '|' + k;
+                            if (seen.has(dedupeKey)) continue; // exact same string already present
+                            seen.add(dedupeKey);
+                            decorated.push([lower, k]);
                         }
                     }
                 }
             }
-            // Unique + sorted by lowercase for stable order, but keep original casing
-            const seen = new Set();
-            allKeysCombined = allKeysCombined
-                .filter(k => {
-                    const lower = k.toLowerCase();
-                    if (seen.has(lower + '|' + k)) return false; // exact same string already present
-                    seen.add(lower + '|' + k);
-                    return true;
-                })
-                .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()) || a.localeCompare(b));
+            //o localeCompare برای این تعداد آیتم (صدها هزارتا) بسیار کند است؛
+            //o یک مقایسهٔ سادهٔ رشته‌ای، برای مرتب‌سازی الفبایی واژه‌نامه‌های
+            //o انگلیسی/فارسی، عملاً همان نتیجه را می‌دهد ولی چند برابر سریع‌تر است.
+            decorated.sort((a, b) => {
+                if (a[0] < b[0]) return -1;
+                if (a[0] > b[0]) return 1;
+                if (a[1] < b[1]) return -1;
+                if (a[1] > b[1]) return 1;
+                return 0;
+            });
+            allKeysCombined = decorated.map(pair => pair[1]);
         }
 
         function renderGlossarySubmenu() {
@@ -1362,7 +1371,11 @@ o           شناور می‌سازیم؛ دقیقاً همان تکنیکِ خ
                         throw new Error('فرمت JSON این فایل مناسب نیست.');
                     }
 
-                    await saveUserGlossary(file.name, data);
+                    //o از همین ابتدا واژه‌نامه را به فرمتِ آماده (پردازش‌شده)
+                    //o ذخیره می‌کنیم، نه JSON خام؛ تا هیچ‌وقت لازم نباشد دوباره
+                    //o این پردازشِ سنگین تکرار شود.
+                    const entries = buildDictEntries(data, displayName);
+                    await saveUserGlossary(file.name, entries);
                     added++;
                     addedNames.push(displayName);
                 } catch (error) {
@@ -1386,6 +1399,37 @@ o           شناور می‌سازیم؛ دقیقاً همان تکنیکِ خ
             alert(message);
         }
 
+        //o تبدیل دادهٔ خامِ JSON یک واژه‌نامه به فرمتِ آماده (آرایه‌ای از
+        //o [کلید, فهرستِ‌مدخل‌ها]) که مستقیماً برای ساخت Map قابل استفاده است.
+        //o این تابع هم موقع افزودنِ واژه‌نامهٔ جدید، و هم موقع مهاجرتِ یک‌بارهٔ
+        //o واژه‌نامه‌های قدیمی (که هنوز به شکل JSON خام ذخیره شده‌اند) استفاده می‌شود.
+        function buildDictEntries(data, dictName) {
+            const map = new Map();
+            for (const key in data) {
+                const entry = data[key];
+                const lowerKey = key.toLowerCase();
+
+                let definition = entry[0];
+                let variants = [];
+
+                if (entry.length > 1 && Array.isArray(entry[1])) {
+                    variants = entry[1].map(v => String(v).toLowerCase());
+                }
+
+                if (!map.has(lowerKey)) {
+                    map.set(lowerKey, []);
+                }
+
+                map.get(lowerKey).push({
+                    definition: definition,
+                    variants: variants,
+                    source: dictName,
+                    originalKey: key
+                });
+            }
+            return Array.from(map.entries());
+        }
+
         async function loadDictionaries() {
             try {
                 const results = [];
@@ -1397,9 +1441,12 @@ o           شناور می‌سازیم؛ دقیقاً همان تکنیکِ خ
                             throw new Error(`HTTP error! status: ${response.status} for ${fileName}`);
                         }
                         const data = await response.json();
+                        const dictName = fileName.replace(/\.json$/i, '').replace(/_/g, " ");
                         return {
-                            path: fileName,
-                            data
+                            dictName,
+                            data,
+                            isLegacyRaw: true,
+                            storageKey: null
                         };
                     })
                 );
@@ -1416,12 +1463,16 @@ o           شناور می‌سازیم؛ دقیقاً همان تکنیکِ خ
                 const newUserKeyMap = {};
                 userResults.forEach(item => {
                     if (item && item.name && item.data) {
+                        const dictName = item.name.replace(/\.json$/i, '').replace(/_/g, " ");
                         results.push({
-                            path: item.name,
-                            data: item.data
+                            dictName,
+                            data: item.data,
+                            //o اگر دادهٔ ذخیره‌شده آرایه نیست، یعنی هنوز به فرمت قدیمیِ
+                            //o JSON خام است و باید یک‌بار پردازش و مهاجرت شود.
+                            isLegacyRaw: !Array.isArray(item.data),
+                            storageKey: item.name
                         });
-                        const displayName = item.name.replace(/\.json$/i, '').replace(/_/g, " ");
-                        newUserKeyMap[displayName] = item.name;
+                        newUserKeyMap[dictName] = item.name;
                     }
                 });
                 userGlossaryKeyByDisplayName = newUserKeyMap;
@@ -1430,38 +1481,25 @@ o           شناور می‌سازیم؛ دقیقاً همان تکنیکِ خ
                 loadedGlossaryNames = [];
 
                 results.forEach(({
-                    path,
-                    data
+                    dictName,
+                    data,
+                    isLegacyRaw,
+                    storageKey
                 }) => {
-                    const dictName = path.replace(/\.json$/i, '').replace(/_/g, " ");
-                    dictionaries[dictName] = new Map();
                     loadedGlossaryNames.push(dictName);
 
-                    for (const key in data) {
-                        const entry = data[key];
-                        const lowerKey = key.toLowerCase();
-
-                        let definition = entry[0];
-                        let variants = [];
-
-                        if (entry.length > 1 && Array.isArray(entry[1])) {
-                            variants = entry[1].map(v => String(v).toLowerCase());
+                    if (isLegacyRaw) {
+                        //o فرمت خام: همین یک‌بار پردازش می‌کنیم (کندترین حالت)، و اگر
+                        //o مربوط به واژه‌نامهٔ کاربر باشد، نسخهٔ آماده را برای دفعات
+                        //o بعد ذخیره می‌کنیم تا این حلقهٔ سنگین دیگر تکرار نشود.
+                        const entries = buildDictEntries(data, dictName);
+                        dictionaries[dictName] = new Map(entries);
+                        if (storageKey) {
+                            saveUserGlossary(storageKey, entries).catch(() => {});
                         }
-
-                        //o چند مدخل با نویسه‌های متفاوت (gt / Gt / GT) ممکن است به یک
-                        //o کلید کوچک‌شدهٔ یکسان برسند؛ هرکدام را در یک فهرست جداگانه
-                        //o نگه می‌داریم تا هیچ‌کدام دیگری را پاک نکند.
-
-                        if (!dictionaries[dictName].has(lowerKey)) {
-                            dictionaries[dictName].set(lowerKey, []);
-                        }
-
-                        dictionaries[dictName].get(lowerKey).push({
-                            definition: definition,
-                            variants: variants,
-                            source: dictName,
-                            originalKey: key
-                        });
+                    } else {
+                        //o فرمت از‌پیش‌آماده: بازسازیِ فوریِ Map، بدون حلقهٔ سنگین.
+                        dictionaries[dictName] = new Map(data);
                     }
                 });
 
