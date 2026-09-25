@@ -19,11 +19,9 @@ public class ProcessTextActivity extends BridgeActivity {
         // همین Activity را ببندد (چون این یک پنجرهٔ معمولی است، نه تب مرورگر).
         getBridge().getWebView().addJavascriptInterface(new Object() {
             @JavascriptInterface
-public void close() {
-    runOnUiThread(() -> {
-        moveTaskToBack(true);
-    });
-}
+            public void close() {
+                runOnUiThread(ProcessTextActivity.this::finish);
+            }
         }, "AndroidPopup");
 
         // فقط همین یک‌بار (اولین ساخته‌شدنِ Activity) کل صفحه را بارگذاری
