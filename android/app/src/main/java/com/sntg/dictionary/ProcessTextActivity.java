@@ -15,6 +15,11 @@ public class ProcessTextActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // WebView به‌طور پیش‌فرض یک پس‌زمینهٔ سفیدِ مات دارد، صرف‌نظر از
+        // شفافیتِ خودِ پنجره؛ باید صریحاً شفافش کنیم تا برنامهٔ زیرین
+        // (مرورگر/PDF) از پشتش دیده شود.
+        getBridge().getWebView().setBackgroundColor(android.graphics.Color.TRANSPARENT);
+
         // یک پل کوچک JS↔Java تا دکمهٔ «بستن» داخل صفحهٔ وب بتواند
         // همین Activity را ببندد (چون این یک پنجرهٔ معمولی است، نه تب مرورگر).
         getBridge().getWebView().addJavascriptInterface(new Object() {
