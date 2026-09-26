@@ -27,8 +27,7 @@
         <activity
             android:name=".ProcessTextActivity"
             android:label="جستجو در SNTG"
-            android:theme="@style/AppTheme.NoActionBar"
-            android:launchMode="singleTask"
+            android:theme="@style/Theme.AppCompat.Dialog.SNTGPopup"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.PROCESS_TEXT" />
