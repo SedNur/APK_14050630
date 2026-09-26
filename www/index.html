@@ -552,13 +552,59 @@ o           به صفحهٔ زیرین. */
             border-top: 1px solid var(--main-border);
         }
 
-        /*o حالت پاپ‌آپ (headless): این صفحه وقتی از داخل منوی انتخاب متن
-o           اندروید (ProcessTextActivity) با پارامتر popup=1 باز می‌شود،
-o           هیچ‌وقت واقعاً به کاربر نشان داده نمی‌شود — فقط برای اجرای
-o           جاوااسکریپت (بارگذاری واژه‌نامه‌ها و جستجو) در پس‌زمینه استفاده
-o           می‌شود؛ نتیجه از طریق پل AndroidPopup.deliverResult() به یک
-o           AlertDialog بومی اندروید تحویل داده می‌شود. به همین دلیل دیگر
-o           نیازی به هیچ استایل اختصاصی‌ای در این حالت نیست. */
+        /*o حالت پاپ‌آپ: پنجرهٔ اندروید کاملاً شفاف است (نگاه کنید به
+o           styles.xml)، پس همین‌جا با CSS یک پس‌زمینهٔ نیمه‌تیره (که از
+o           پشتش مرورگر/PDF واقعی دیده می‌شود) به‌علاوهٔ یک کارتِ کوچیکِ
+o           شناور می‌سازیم؛ دقیقاً همان تکنیکِ خودِ #meaning-modal برنامه. */
+        html.popup-mode,
+        html.popup-mode body {
+            background: transparent !important;
+            margin: 0;
+            height: 100%;
+        }
+
+        #popup-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            z-index: 900;
+        }
+
+        #popup-card {
+            position: fixed;
+            top: 25%;
+            bottom: 25%;
+            left: 4%;
+            right: 4%;
+            background: var(--page-bg);
+            border-radius: 12px;
+            overflow-y: auto;
+            z-index: 901;
+            padding: 8px 12px;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+            box-sizing: border-box;
+        }
+
+        #popup-close-btn {
+            position: fixed;
+            top: calc(25% - 42px);
+            left: 4%;
+            z-index: 999;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 1px solid #ccc;
+            background: #fff;
+            color: #333;
+            font-size: 16px;
+            line-height: 1;
+            cursor: pointer;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+        }
+        html.popup-mode #back-to-top,
+        html.popup-mode #go-to-bottom {
+            display: none !important;
+        }
 
     </style>
     <link rel="manifest" href="manifest.json">
@@ -1982,39 +2028,52 @@ o           نیازی به هیچ استایل اختصاصی‌ای در ای�
 
         //o حالت پاپ‌آپ: وقتی این صفحه از داخل منوی انتخاب متن اندروید
         //o (ProcessTextActivity، برای PROCESS_TEXT) با آدرس
-        //o ?popup=1&word=... باز می‌شود، این صفحه هیچ‌وقت واقعاً دیده نمی‌شود؛
-        //o فقط جستجو را انجام می‌دهد و نتیجه را به یک AlertDialog بومی
-        //o اندروید (در ProcessTextActivity.java) تحویل می‌دهد.
+        //o ?popup=1&word=... باز می‌شود، به‌محض تمام‌شدن بارگذاریِ
+        //o واژه‌نامه‌ها، مستقیماً معنای همان کلمه نشان داده می‌شود.
         (function initPopupMode() {
             const params = new URLSearchParams(location.search);
             if (params.get('popup') !== '1') return;
 
             document.documentElement.classList.add('popup-mode');
 
-            //o جستجوی یک کلمه و تحویلِ متنِ سادهٔ نتیجه به کدِ جاوا. هم برای
-            //o اولین بارگذاری استفاده می‌شود، هم برای دفعات بعدی وقتی این
-            //o پنجره (چون singleTask است) برای کلمهٔ جدیدی دوباره احضار
-            //o می‌شود — در آن حالت دیگر نیازی به بارگذاری دوبارهٔ
-            //o واژه‌نامه‌ها نیست، فقط همین جستجوی جدید اجرا می‌شود.
-            window.popupLookupPlainText = function(word) {
-                if (!word) return;
-                Promise.resolve(dictionariesReadyPromise).then(() => {
-                    showMeaning(word);
-                    requestAnimationFrame(() => {
-                        const container = document.getElementById('results-container');
-                        const text = container && container.innerText ?
-                            container.innerText.trim() :
-                            'چیزی یافت نشد.';
-                        if (window.AndroidPopup && window.AndroidPopup.deliverResult) {
-                            window.AndroidPopup.deliverResult(word, text);
-                        }
-                    });
-                });
-            };
+            function closePopup() {
+                if (window.AndroidPopup && window.AndroidPopup.close) {
+                    window.AndroidPopup.close();
+                } else {
+                    history.back();
+                }
+            }
+
+            //o همهٔ محتوای فعلیِ body (کادر جستجو، منو، نتایج و ...) را داخل
+            //o یک کارتِ کوچیکِ شناور می‌گذاریم، و پشتش یک پس‌زمینهٔ نیمه‌تیره
+            //o می‌سازیم که با کلیک روی خودش (نه محتوای کارت) بسته می‌شود —
+            //o دقیقاً همان تکنیکِ خودِ #meaning-modal برنامه.
+            const backdrop = document.createElement('div');
+            backdrop.id = 'popup-backdrop';
+            backdrop.addEventListener('click', closePopup);
+
+            const card = document.createElement('div');
+            card.id = 'popup-card';
+            while (document.body.firstChild) {
+                card.appendChild(document.body.firstChild);
+            }
+
+            document.body.appendChild(backdrop);
+            document.body.appendChild(card);
+
+            const closeBtn = document.createElement('button');
+            closeBtn.id = 'popup-close-btn';
+            closeBtn.type = 'button';
+            closeBtn.textContent = '✕';
+            closeBtn.setAttribute('aria-label', 'بستن');
+            closeBtn.addEventListener('click', closePopup);
+            document.body.appendChild(closeBtn);
 
             const word = params.get('word') || '';
-            window.addEventListener('load', () => {
-                if (word) window.popupLookupPlainText(word);
+
+            window.addEventListener('load', async () => {
+                await dictionariesReadyPromise;
+                if (word) showMeaning(word);
             });
         })();
         if ("serviceWorker" in navigator) {
