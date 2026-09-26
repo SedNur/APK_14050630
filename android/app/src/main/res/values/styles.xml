@@ -24,6 +24,7 @@
 o       یک پنجرهٔ شناورِ بزرگ (نه یک باکس کوچیک وسط صفحه)، تا رابط کامل
 o       برنامه (کادر جستجو، منو، تاریخچه) جای کافی داشته باشد. -->
     <style name="Theme.AppCompat.Dialog.SNTGPopup" parent="Theme.AppCompat.Dialog">
+        <item name="android:windowIsTranslucent">true</item>
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:backgroundDimEnabled">false</item>
         <item name="android:windowNoTitle">true</item>
