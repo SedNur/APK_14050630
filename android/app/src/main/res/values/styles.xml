@@ -20,12 +20,24 @@
         <item name="android:background">@drawable/splash</item>
     </style>
 
-    <!--o تمِ پنجرهٔ پاپ‌آپ (ProcessTextActivity، برای منوی انتخاب متن اندروید):
-o       یک پنجرهٔ شناورِ بزرگ (نه یک باکس کوچیک وسط صفحه)، تا رابط کامل
-o       برنامه (کادر جستجو، منو، تاریخچه) جای کافی داشته باشد. -->
+    <!--
+      تمِ پنجرهٔ پاپ‌آپ (ProcessTextActivity، برای منوی انتخاب متن اندروید).
+      هدف: صفحهٔ پشت (مرورگر / PDF / …) کاملاً دیده شود؛ هیچ dim و هیچ پس‌زمینهٔ مات نباشد.
+      شبیه DictBox / BlueDict: فقط یک کارت شناور روی محتوای واقعی زیرین.
+    -->
     <style name="Theme.AppCompat.Dialog.SNTGPopup" parent="Theme.AppCompat.Dialog">
+        <item name="android:windowIsTranslucent">true</item>
         <item name="android:windowBackground">@android:color/transparent</item>
-        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:colorBackgroundCacheHint">@null</item>
+        <item name="android:windowContentOverlay">@null</item>
         <item name="android:windowNoTitle">true</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:backgroundDimAmount">0</item>
+        <item name="android:windowAnimationStyle">@android:style/Animation.Dialog</item>
+        <!-- اجازه می‌دهد اندازهٔ پنجره توسط layout کنترل شود -->
+        <item name="android:windowMinWidthMajor">100%</item>
+        <item name="android:windowMinWidthMinor">100%</item>
+        <item name="android:windowCloseOnTouchOutside">true</item>
     </style>
 </resources>
