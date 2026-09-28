@@ -1,73 +1,43 @@
-package com.sntg.dictionary;
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
 
-import android.content.Intent;
-import android.net.Uri;
-import android.os.Bundle;
-import android.webkit.JavascriptInterface;
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <!-- Customize your theme here. -->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+    </style>
 
-import com.getcapacitor.BridgeActivity;
+    <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:background">@null</item>
+    </style>
 
-public class ProcessTextActivity extends BridgeActivity {
 
-    private boolean pageLoaded = false;
+    <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
+        <item name="android:background">@drawable/splash</item>
+    </style>
 
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-        // یک پل کوچک JS↔Java تا دکمهٔ «بستن» داخل صفحهٔ وب بتواند
-        // همین Activity را ببندد (چون این یک پنجرهٔ معمولی است، نه تب مرورگر).
-        getBridge().getWebView().addJavascriptInterface(new Object() {
-            @JavascriptInterface
-            public void close() {
-                runOnUiThread(ProcessTextActivity.this::finish);
-            }
-        }, "AndroidPopup");
-
-        // فقط همین یک‌بار (اولین ساخته‌شدنِ Activity) کل صفحه را بارگذاری
-        // می‌کنیم. کلمهٔ اول از طریق پارامتر URL منتقل می‌شود چون در این
-        // لحظه هنوز جاوااسکریپت صفحه آماده نیست تا evaluateJavascript کار کند.
-        // دفعات بعدی، چون این Activity به‌صورت singleTask تعریف شده،
-        // onNewIntent صدا زده می‌شود (نه onCreate) و از همان تابعِ JS استفاده می‌شود.
-        CharSequence selected = getIntent().getCharSequenceExtra(Intent.EXTRA_PROCESS_TEXT);
-        String selectedText = (selected != null) ? selected.toString() : "";
-        String encodedWord = Uri.encode(selectedText);
-        getBridge().getWebView().loadUrl("https://localhost/index.html?popup=1&word=" + encodedWord);
-        pageLoaded = true;
-    }
-
-    @Override
-    protected void onNewIntent(Intent intent) {
-        super.onNewIntent(intent);
-        setIntent(intent);
-
-        if (!pageLoaded) {
-            // احتیاطاً: اگر به هر دلیلی هنوز صفحه بارگذاری نشده، صبر می‌کنیم
-            // که onCreate خودش کار را انجام دهد.
-            return;
-        }
-
-        // نمونهٔ قبلی هنوز زنده و بارگذاری‌شده است؛ فقط کلمهٔ جدید را
-        // جستجو می‌کنیم (کسری از ثانیه)، بدون بارگذاری دوبارهٔ کل صفحه.
-        searchWordFromIntent(intent);
-    }
-
-    private void searchWordFromIntent(Intent intent) {
-        CharSequence selected = (intent != null) ? intent.getCharSequenceExtra(Intent.EXTRA_PROCESS_TEXT) : null;
-        String selectedText = (selected != null) ? selected.toString() : "";
-        if (selectedText.isEmpty()) return;
-
-        // متن را به‌شکل امن به‌عنوان یک رشتهٔ جاوااسکریپتی escape می‌کنیم
-        // (نه فقط URL-encode، چون این‌بار مستقیم به‌عنوان کد JS اجرا می‌شود).
-        String escaped = selectedText
-                .replace("\\", "\\\\")
-                .replace("'", "\\'")
-                .replace("\n", "\\n")
-                .replace("\r", "");
-
-        getBridge().getWebView().evaluateJavascript(
-                "window.popupSearchWord && window.popupSearchWord('" + escaped + "');",
-                null
-        );
-    }
-}
+    <!--
+      تمِ پنجرهٔ پاپ‌آپ (ProcessTextActivity، برای منوی انتخاب متن اندروید).
+      هدف: صفحهٔ پشت (مرورگر / PDF / …) کاملاً دیده شود؛ هیچ dim و هیچ پس‌زمینهٔ مات نباشد.
+      شبیه DictBox / BlueDict: فقط یک کارت شناور روی محتوای واقعی زیرین.
+    -->
+    <style name="Theme.AppCompat.Dialog.SNTGPopup" parent="Theme.AppCompat.Dialog">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:colorBackgroundCacheHint">@null</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:backgroundDimAmount">0</item>
+        <item name="android:windowAnimationStyle">@android:style/Animation.Dialog</item>
+        <!-- اجازه می‌دهد اندازهٔ پنجره توسط layout کنترل شود -->
+        <item name="android:windowMinWidthMajor">100%</item>
+        <item name="android:windowMinWidthMinor">100%</item>
+        <item name="android:windowCloseOnTouchOutside">true</item>
+    </style>
+</resources>
