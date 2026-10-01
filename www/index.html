@@ -1234,7 +1234,7 @@ o           به صفحهٔ زیرین. */
 
         if (isExpanded) {
             const upBtn = document.createElement("span");
-            upBtn.textContent = "⬆";
+            upBtn.textContent = "▲"; // "⬆";
             upBtn.className = "glossary-order-btn" + (index === 0 ? " disabled" : "");
             upBtn.title = "انتقال به بالا";
             upBtn.onclick = (event) => {
@@ -1243,7 +1243,7 @@ o           به صفحهٔ زیرین. */
             };
 
             const downBtn = document.createElement("span");
-            downBtn.textContent = "⬇";
+            downBtn.textContent = "▼"; // "⬇";
             downBtn.className = "glossary-order-btn" + (index === loadedGlossaryNames.length - 1 ? " disabled" : "");
             downBtn.title = "انتقال به پایین";
             downBtn.onclick = (event) => {
