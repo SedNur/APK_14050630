@@ -26,7 +26,7 @@
 
         <activity
             android:name=".ProcessTextActivity"
-            android:label="جستجو در SNTG"
+            android:label="Nur_Dict"
             android:theme="@style/Theme.AppCompat.Dialog.SNTGPopup"
             android:launchMode="singleTask"
             android:exported="true">
