@@ -1,6 +1,6 @@
 {
-  "name": "NurDict",
-  "short_name": "NurDict",
+  "name": "SedNur_Dictionary",
+  "short_name": "NURDICT",
   "start_url": "index.html",
   "display": "standalone",
   "background_color": "#ffffff",
