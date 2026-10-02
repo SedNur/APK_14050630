@@ -26,7 +26,7 @@
 
         <activity
             android:name=".ProcessTextActivity"
-            android:label="NURDICT"
+            android:label="NurDict"
             android:theme="@style/Theme.AppCompat.Dialog.SNTGPopup"
             android:exported="true">
             <intent-filter>
