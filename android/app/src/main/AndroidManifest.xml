@@ -26,7 +26,7 @@
 
         <activity
             android:name=".ProcessTextActivity"
-            android:label="جستجو در SNTG"
+            android:label="NURDICT"
             android:theme="@style/Theme.AppCompat.Dialog.SNTGPopup"
             android:exported="true">
             <intent-filter>
