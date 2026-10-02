@@ -1,6 +1,6 @@
 {
-  "name": "SNTG",
-  "short_name": "SNTG",
+  "name": "NurDict",
+  "short_name": "NurDict",
   "start_url": "index.html",
   "display": "standalone",
   "background_color": "#ffffff",
